@@ -1,3 +1,0 @@
-distro_name="ubuntu"
-distro_prefix="ubuntu"
-crypttab_entry="root"
