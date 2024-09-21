@@ -2,8 +2,6 @@
 
 # Install
 
-# Build
-
 # Download initramfs
 
 ```bash
@@ -14,4 +12,17 @@ zcat ../initramfs.gz | cpio -idmv
 cd ..
 ```
 
+# Build
+
+```bash
+bash make-kernel.sh
+bash make-rootfs.sh
+bash make-initramfs.sh
+bash make-boot.sh
+```
+
 # Flash
+
+```bash
+bash flash.sh all
+```
