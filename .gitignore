@@ -5,3 +5,4 @@ kernel/toolchains/*
 kernel/samsung_kernel/*
 kernel/boot/*
 initramfs/*
+initramfs.gz
