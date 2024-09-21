@@ -1,0 +1,7 @@
+boot/*
+rootfs/*
+utils/mkbootimg
+kernel/toolchains/*
+kernel/samsung_kernel/*
+kernel/boot/*
+initramfs/*

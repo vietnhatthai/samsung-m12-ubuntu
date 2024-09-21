@@ -1,0 +1,35 @@
+With this patch it is possible to ignore the bootloader commandline and insert our own in the dtbo bootargs simply by putting // at the end
+
+---
+diff --git a/init/main.c b/init/main.c
+index b243dfe953b3..6a1b6565fff7 100644
+--- a/init/main.c
++++ b/init/main.c
+@@ -591,6 +591,16 @@ static void __init mm_init(void)
+ 	pti_init();
+ }
+ 
++// Makes setting command line easier with bootargs in dtbo
++void process_command_line(char *cmdline)
++{
++    char *comment_pos = strstr(cmdline, "//");
++    if (comment_pos) {
++        // Replace '//' with null terminator
++        *comment_pos = '\0';
++    }
++}
++
+ asmlinkage __visible void __init start_kernel(void)
+ {
+ 	char *command_line;
+@@ -617,6 +627,9 @@ asmlinkage __visible void __init start_kernel(void)
+ 	rkp_robuffer_init();
+ #endif
+ 	setup_arch(&command_line);
++
++	process_command_line(command_line);
++
+ 	mm_init_cpumask(&init_mm);
+ 	setup_command_line(command_line);
+ 	setup_nr_cpu_ids();
+ 

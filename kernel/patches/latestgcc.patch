@@ -1,0 +1,173 @@
+This patch makes it possible to compile the kernel with the latest gcc version
+
+---
+diff --git a/Makefile b/Makefile
+index d61b3a69eb10..8db1885326b2 100644
+--- a/Makefile
++++ b/Makefile
+@@ -5,6 +5,7 @@ SUBLEVEL = 111
+ EXTRAVERSION =
+ NAME = "People's Front"
+ 
++
+ # *DOCUMENTATION*
+ # To see a list of typical targets execute "make help"
+ # More info can be located in ./README
+@@ -320,9 +321,9 @@ include scripts/subarch.include
+ # Default value for CROSS_COMPILE is not to prefix executables
+ # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
+ ARCH        ?=arm64
+-CROSS_COMPILE   ?= $(srctree)/toolchain/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/aarch64-linux-androidkernel-
++#CROSS_COMPILE   ?= $(srctree)/toolchain/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/aarch64-linux-androidkernel-
+ # Location to clang toolchain
+-CLANG_PATH ?= $(srctree)/toolchain/clang/host/linux-x86/clang-r353983c/bin/
++#CLANG_PATH ?= $(srctree)/toolchain/clang/host/linux-x86/clang-r353983c/bin/
+ 
+ # Architecture as present in compile.h
+ UTS_MACHINE 	:= $(ARCH)
+@@ -429,9 +430,8 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wno-trigraphs \
+ 		   -fno-strict-aliasing -fno-common -fshort-wchar \
+ 		   -Wno-format-security \
+ 		   -std=gnu89 \
+-		   -Werror-implicit-function-declaration \
+-		   -Werror \
+-		   -Wstrict-prototypes
++		   -Wno-unused-function \
++		   -Wno-strict-prototypes
+ KBUILD_CPPFLAGS := -D__KERNEL__
+ KBUILD_AFLAGS_KERNEL :=
+ KBUILD_CFLAGS_KERNEL :=
+@@ -493,7 +493,7 @@ endif
+ 
+ ifeq ($(cc-name),clang)
+ ifneq ($(CROSS_COMPILE),)
+-CLANG_TRIPLE    ?= $(srctree)/toolchain/clang/host/linux-x86/clang-r353983c/bin/aarch64-linux-gnu-
++#CLANG_TRIPLE    ?= $(srctree)/toolchain/clang/host/linux-x86/clang-r353983c/bin/aarch64-linux-gnu-
+ CLANG_FLAGS	+= --target=$(notdir $(CLANG_TRIPLE:%-=%))
+ ifeq ($(shell $(srctree)/scripts/clang-android.sh $(CC) $(CLANG_FLAGS)), y)
+ $(error "Clang with Android --target detected. Did you specify CLANG_TRIPLE?")
+@@ -922,13 +922,13 @@ KBUILD_CFLAGS   += $(call cc-option,-fconserve-stack)
+ KBUILD_CFLAGS   += $(call cc-option,-Werror=implicit-int)
+ 
+ # require functions to have arguments in prototypes, not empty 'int foo()'
+-KBUILD_CFLAGS   += $(call cc-option,-Werror=strict-prototypes)
++#KBUILD_CFLAGS   += $(call cc-option,-Werror=strict-prototypes)
+ 
+ # Prohibit date/time macros, which would make the build non-deterministic
+ KBUILD_CFLAGS   += $(call cc-option,-Werror=date-time)
+ 
+ # enforce correct pointer usage
+-KBUILD_CFLAGS   += $(call cc-option,-Werror=incompatible-pointer-types)
++#KBUILD_CFLAGS   += $(call cc-option,-Werror=incompatible-pointer-types)
+ 
+ # Require designated initializers for all marked structures
+ KBUILD_CFLAGS   += $(call cc-option,-Werror=designated-init)
+diff --git a/drivers/battery/common/sec_battery.c b/drivers/battery/common/sec_battery.c
+index df86213f13c9..ed1efa6abcf6 100755
+--- a/drivers/battery/common/sec_battery.c
++++ b/drivers/battery/common/sec_battery.c
+@@ -312,7 +312,7 @@ static int __init read_f_mode(char *str)
+ __setup("f_mode=", read_f_mode);
+ #endif
+ 
+-inline void battery_wakeup_source_init(struct device *dev, struct wakeup_source **ws, const char *name)
++void battery_wakeup_source_init(struct device *dev, struct wakeup_source **ws, const char *name)
+ {
+ #if !defined(CONFIG_SUPPORT_WAKEUP_REGISTER) && LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0)
+ 	// 4.19 R
+@@ -6721,13 +6721,14 @@ static int make_pd_list(struct sec_battery_info *battery)
+ 			pd_list_select].pdo_index].max_current / 1000;
+ 		battery->pd_max_charge_power = battery->max_charge_power;
+ 	}
+-
++#if defined(CONFIG_BATTERY_CISD)
+ 	if (battery->cable_type == SEC_BATTERY_CABLE_NONE) {
+ 		if (battery->pd_max_charge_power > 12000)
+ 			battery->cisd.cable_data[CISD_CABLE_PD_HIGH]++;
+ 		else
+ 			battery->cisd.cable_data[CISD_CABLE_PD]++;
+ 	}
++#endif
+ 
+ 	if (battery->pdic_info.sink_status.selected_pdo_num == battery->pd_list.pd_info[pd_list_select].pdo_index) {
+ 		battery->pdic_ps_rdy = true;
+diff --git a/drivers/battery/common/sec_charging_common.h b/drivers/battery/common/sec_charging_common.h
+index 42af143c29f4..65e51299da36 100644
+--- a/drivers/battery/common/sec_charging_common.h
++++ b/drivers/battery/common/sec_charging_common.h
+@@ -637,7 +637,7 @@ typedef struct {
+ 	unsigned int asoc;
+ } battery_health_condition;
+ 
+-inline void battery_wakeup_source_init(struct device *dev, struct wakeup_source **ws, const char *name);
++void battery_wakeup_source_init(struct device *dev, struct wakeup_source **ws, const char *name);
+ 
+ static inline struct power_supply *get_power_supply_by_name(char *name)
+ {
+diff --git a/drivers/kperfmon/Makefile b/drivers/kperfmon/Makefile
+index 13ff6a6cbdbd..5f9864f9c773 100644
+--- a/drivers/kperfmon/Makefile
++++ b/drivers/kperfmon/Makefile
+@@ -11,7 +11,7 @@ ifneq ($(CONFIG_KPERFMON), y)
+ FLAG=0
+ $(info kperfmon_DUMMY="CONFIG_KPERFMON is off.")
+ endif
+-
++ifdef CONFIG_KPERFMON
+ ifneq ($(shell [ -e $(srctree)/include/linux/olog.pb.h ] && echo exist), exist)
+ $(info kperfmon_DUMMY="olog.pb.h file is missing... retrying")
+ 
+@@ -48,3 +48,4 @@ else
+ 	obj-y		+= ologk.o
+ #$(info kperfmon_DUMMY="$(shell cp -f $(srctree)/drivers/kperfmon/ologk.h $(srctree)/include/linux/)")
+ endif
++endif
+diff --git a/drivers/media/common/videobuf2/videobuf2-vmalloc.c b/drivers/media/common/videobuf2/videobuf2-vmalloc.c
+index 6dfbd5b05907..4f3c62434967 100644
+--- a/drivers/media/common/videobuf2/videobuf2-vmalloc.c
++++ b/drivers/media/common/videobuf2/videobuf2-vmalloc.c
+@@ -429,15 +429,15 @@ static void *vb2_vmalloc_attach_dmabuf(struct device *dev, struct dma_buf *dbuf,
+ 
+ 
+ const struct vb2_mem_ops vb2_vmalloc_memops = {
+-	.alloc		= vb2_vmalloc_alloc,
++	.alloc		= (void *(*)(struct device *, unsigned long, unsigned long,enum dma_data_direction, gfp_t, int)) vb2_vmalloc_alloc,
+ 	.put		= vb2_vmalloc_put,
+-	.get_userptr	= vb2_vmalloc_get_userptr,
++	.get_userptr	= (void *(*)(struct device *, unsigned long, unsigned long,enum dma_data_direction, int)) vb2_vmalloc_get_userptr,
+ 	.put_userptr	= vb2_vmalloc_put_userptr,
+ #ifdef CONFIG_HAS_DMA
+ 	.get_dmabuf	= vb2_vmalloc_get_dmabuf,
+ #endif
+-	.map_dmabuf	= vb2_vmalloc_map_dmabuf,
+-	.unmap_dmabuf	= vb2_vmalloc_unmap_dmabuf,
++	.map_dmabuf	= (int (*)(void *, size_t, int)) vb2_vmalloc_map_dmabuf,
++	.unmap_dmabuf	= (void (*)(void *, size_t)) vb2_vmalloc_unmap_dmabuf,
+ 	.attach_dmabuf	= vb2_vmalloc_attach_dmabuf,
+ 	.detach_dmabuf	= vb2_vmalloc_detach_dmabuf,
+ 	.vaddr		= vb2_vmalloc_vaddr,
+diff --git a/drivers/samsung/sec_param.c b/drivers/samsung/sec_param.c
+index 4b7b52fac628..264d596a66ac 100644
+--- a/drivers/samsung/sec_param.c
++++ b/drivers/samsung/sec_param.c
+@@ -235,7 +235,6 @@ int sec_set_param(unsigned long offset, char val)
+ 	mutex_lock(&sec_param_mutex);
+ 
+ 	switch (offset) {
+-	case CM_OFFSET ... CM_OFFSET_LIMIT:
+ 	case FMM_LOCK_OFFSET:
+ 		break;
+ 	default:
+diff --git a/include/linux/mm.h b/include/linux/mm.h
+index 42b53dc8d951..36f84c2a136e 100644
+--- a/include/linux/mm.h
++++ b/include/linux/mm.h
+@@ -3012,7 +3012,7 @@ void __init setup_nr_node_ids(void);
+ static inline void setup_nr_node_ids(void) {}
+ #endif
+ 
+-extern inline bool need_memory_boosting(struct pglist_data *pgdat);
++bool need_memory_boosting(struct pglist_data *pgdat);
+ 
+ enum memsize_kernel_type {
+ 	MEMSIZE_KERNEL_KERNEL = 0,
