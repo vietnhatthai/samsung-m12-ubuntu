@@ -2,6 +2,12 @@
 
 # Install
 
+```bash
+apt install bc bison build-essential ca-certificates cpio curl flex git kmod libssl-dev xz-utils
+apt install debootstrap qemu-user-static binfmt-support
+apt install android-tools-fsutils
+```
+
 # Download initramfs
 
 ```bash
