@@ -91,7 +91,9 @@ cd /home/vietnhat
 git clone https://github.com/Vi631/android_vendor_samsung_m12.git
 cd /home/vietnhat/android_vendor_samsung_m12
 mkdir /lib/firmware
+mkdir /lib64
 cp -r ./etc/* /lib/firmware/
-cp -r ./lib64/* /lib/
+cp -r ./lib/* /lib/
+cp -r ./lib/* /lib64/
 cd /home/vietnhat
 rm -r android_vendor_samsung_m12
