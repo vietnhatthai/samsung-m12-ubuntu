@@ -18,7 +18,7 @@ sudo chroot rootfs /bin/bash -c "chmod +x /root/initrootfs.sh && /root/initrootf
 sudo umount rootfs/proc rootfs/sys rootfs/dev/pts rootfs/dev
 
 mkdir -p ./boot
-dd if=/dev/zero of=./boot/tmp_rootfs.img bs=1M count=2048
+dd if=/dev/zero of=./boot/tmp_rootfs.img bs=1M count=4096
 mkfs.ext4 -L USERDATA ./boot/tmp_rootfs.img
 sudo mkdir -p /mnt/rootfs
 sudo mount -o loop ./boot/tmp_rootfs.img /mnt/rootfs
