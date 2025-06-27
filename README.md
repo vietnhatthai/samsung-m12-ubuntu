@@ -4,6 +4,7 @@
 
 ```bash
 apt install bc bison build-essential ca-certificates cpio curl flex git kmod libssl-dev xz-utils
+apt install python3 python-is-python3
 apt install debootstrap qemu-user-static binfmt-support
 apt install android-sdk-libsparse-utils
 ```
